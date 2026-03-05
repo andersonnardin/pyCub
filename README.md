@@ -1,6 +1,8 @@
 # pyCub Documentation
 pyCub is iCub humanoid robot simulator written in Python. It uses PyBullet for simulation and Open3D for visualization.
 
+[![iCub Robot](docs/documentation/images/icub.png)](https://rustlluk.github.io/pycub)
+
 ## Installation  
 - Requires python3.10 to 3.12
   - newer python versions are now not supported due to incompatible with some dependencies 
@@ -172,3 +174,14 @@ This work is licensed under a
 [cc-by]: http://creativecommons.org/licenses/by/4.0/
 [cc-by-image]: https://i.creativecommons.org/l/by/4.0/88x31.png
 [cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
+
+## Citing
+When used, please cite this repository as follows:
+```
+@inproceedings{rustler2026pycub,
+      title={Learning with pyCub: A Simulation and Exercise Framework for Humanoid Robotics},
+      author={Lukas Rustler and Matej Hoffmann},
+      year={2026},
+      booktitle={17th International Conference on Robotics in Education (RiE 2026)},
+      organization={Springer}}
+```
