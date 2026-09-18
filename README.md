@@ -25,8 +25,9 @@ Compared with the upstream project, this fork makes the following changes:
 - Allows URDF mesh filenames containing spaces, which is needed for paths such
   as Windows project folders with spaces in their names.
 
-The optional PyBullet GUI is an alternative interface for specific environments;
-it does not replace or claim to improve the original Open3D visualization.
+The optional PyBullet GUI is provided for environments where Open3D cannot run;
+it complements the original Open3D visualizer rather than replacing or
+superseding it.
 
 [![iCub Robot](docs/documentation/images/icub.png)](https://rustlluk.github.io/pycub)
 
