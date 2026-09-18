@@ -4,3 +4,11 @@
 *_build*
 *.csv
 *docs_*
+
+# Runtime-generated pyCub collision assets
+/icub_pybullet/iCub/full_vhacd.urdf
+/icub_pybullet/other_meshes/*/*_vhacd.*
+/icub_pybullet/other_meshes/ball/ball.urdf
+/icub_pybullet/other_meshes/ball/ball_.*
+/icub_pybullet/other_meshes/plane/plane.urdf
+/icub_pybullet/other_meshes/table/table.urdf

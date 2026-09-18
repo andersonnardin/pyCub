@@ -109,8 +109,6 @@ class pyCub(BulletClient):
         :param config: path to the config file
         :type config: str, optional, default="default.yaml"
         """
-        super().__init__(p.DIRECT)
-
         self.parent_name = os.path.basename(inspect.stack()[1].filename)
 
         self.file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -119,6 +117,21 @@ class pyCub(BulletClient):
                        os.path.join(os.getcwd(), os.path.dirname(inspect.stack()[1].filename), config)]:
             if os.path.exists(c_path):
                 self.config = Config(c_path)
+
+        connection_mode = p.GUI if getattr(self.config, "pybullet_gui", False) else p.DIRECT
+        self.pybullet_gui = connection_mode == p.GUI
+        connection_options = "--width=900 --height=700" if connection_mode == p.GUI else ""
+        super().__init__(connection_mode, options=connection_options)
+
+        self.pybullet_camera_eye = getattr(self.config, "pybullet_camera_eye", None)
+        self._last_pybullet_camera_render = 0.0
+        self._last_pybullet_skin_render = 0.0
+        self._pybullet_skin_debug_item = -1
+        if connection_mode == p.GUI:
+            self.configureDebugVisualizer(p.COV_ENABLE_RGB_BUFFER_PREVIEW, 1)
+            self.configureDebugVisualizer(p.COV_ENABLE_DEPTH_BUFFER_PREVIEW, 1)
+            self.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 1)
+
         self.config.simulation_step = 1/self.config.simulation_step
         self.setTimeStep(self.config.simulation_step)
         if self.config.gui.standard or self.config.gui.web:
@@ -162,6 +175,8 @@ class pyCub(BulletClient):
         self.free_objects = []
 
         self.robot, self.joints, self.links = self.init_robot()
+        if connection_mode == p.GUI and getattr(self.config, "pybullet_start_view", False):
+            self.set_pybullet_start_view()
 
         # prepare IK config so we can utilize null space
         self.IK_config = {"movable_joints": [_.joints_id for _ in self.joints if "_hand_" not in _.name],
@@ -225,9 +240,17 @@ class pyCub(BulletClient):
             self.visualizer = Visualizer(self)
             self.last_render = time.time()
 
-        rtb_links, rtb_name, rtb_urdf_string, rtb_urdf_file_path = rtb.robot.Robot.URDF_read(self.urdf_path)
-        self.rtb_robot = rtb.robot.Robot(rtb_links, name=rtb_name.upper(), manufacturer="IIT",
-                                         urdf_string=rtb_urdf_string, urdf_filepath=rtb_urdf_file_path,)
+        # Robotics Toolbox 1.0 exposes the URDF reader on ``ERobot`` rather
+        # than on the base ``Robot`` class.
+        rtb_links, rtb_name, _, rtb_urdf_file_path = rtb.robot.ERobot.URDF_read(
+            self.urdf_path
+        )
+        self.rtb_robot = rtb.robot.ERobot(
+            rtb_links,
+            name=rtb_name.upper(),
+            manufacturer="IIT",
+        )
+        self.rtb_robot._urdf_filepath = str(rtb_urdf_file_path)
 
         self.chains, self.chains_joints = self.get_chains()
 
@@ -238,6 +261,9 @@ class pyCub(BulletClient):
         self.precomputed_link_ids = {}
         for link in self.links:
             self.precomputed_link_ids[link.name] = link.robot_link_id
+
+        if self.pybullet_gui and self.config.skin.use:
+            self.enable_pybullet_skin_visualization()
 
     @staticmethod
     def get_chains() -> Tuple[dict, dict]:
@@ -408,6 +434,15 @@ class pyCub(BulletClient):
 
         return robot, joints, links
 
+    def set_pybullet_start_view(self) -> None:
+        """Apply the configured initial observer view once."""
+        self.resetDebugVisualizerCamera(
+            cameraDistance=self.config.pybullet_camera_distance,
+            cameraYaw=self.config.pybullet_camera_yaw,
+            cameraPitch=self.config.pybullet_camera_pitch,
+            cameraTargetPosition=self.config.pybullet_camera_target,
+        )
+
     def init_urdfs(self) -> None:
         """
         Function to load URDFs of other objects
@@ -497,6 +532,95 @@ class pyCub(BulletClient):
         if self.gui and cur_time-self.last_render > 0.01 and self.visualizer.is_alive:
             self.visualizer.render()
             self.last_render = cur_time
+
+        if self.pybullet_camera_eye is not None:
+            self.update_pybullet_camera_preview()
+        if self.pybullet_gui and self.config.skin.use:
+            self.update_pybullet_skin_visualization()
+
+    def enable_pybullet_skin_visualization(self) -> None:
+        """Give the PyBullet skin test the same translucent robot treatment as Open3D."""
+        for link_index in range(-1, self.getNumJoints(self.robot)):
+            self.changeVisualShape(self.robot, link_index, rgbaColor=[1.0, 1.0, 1.0, 0.35])
+
+    def update_pybullet_skin_visualization(self) -> None:
+        """Draw the simulated skin sensors in PyBullet's GUI."""
+        now = time.time()
+        if now - self._last_pybullet_skin_render < 1.0 / 15.0:
+            return
+
+        points = []
+        colors = []
+        for skin_part, (local_points, _) in self.skin.items():
+            link_id = self.precomputed_link_ids[skin_part]
+            state = self.getLinkState(self.robot, link_id, computeForwardKinematics=True)
+            rotation = np.asarray(self.getMatrixFromQuaternion(state[self.linkInfo["URDFORI"]])).reshape(3, 3)
+            world_points = (rotation @ local_points.T).T + np.asarray(state[self.linkInfo["URDFPOS"]])
+            activations = self.skin_activations[skin_part] > 0
+
+            points.extend(world_points.tolist())
+            colors.extend([[1.0, 0.0, 0.0] if active else [0.0, 0.0, 1.0]
+                           for active in activations])
+
+        try:
+            self._pybullet_skin_debug_item = self.addUserDebugPoints(
+                points,
+                colors,
+                pointSize=2.5,
+                replaceItemUniqueId=self._pybullet_skin_debug_item,
+            )
+            self._last_pybullet_skin_render = now
+        except p.error:
+            # Recreate the overlay if this PyBullet build cannot replace an item.
+            if self._pybullet_skin_debug_item >= 0:
+                self.removeUserDebugItem(self._pybullet_skin_debug_item)
+            self._pybullet_skin_debug_item = self.addUserDebugPoints(points, colors, pointSize=2.5)
+            self._last_pybullet_skin_render = now
+
+    def update_pybullet_camera_preview(self) -> None:
+        """Keep PyBullet's embedded RGB preview attached to a selected eye."""
+        try:
+            key_events = self.getKeyboardEvents()
+            if key_events.get(ord("l"), 0) & p.KEY_WAS_TRIGGERED:
+                self.pybullet_camera_eye = "l_eye"
+                print("PyBullet camera: left eye")
+            elif key_events.get(ord("r"), 0) & p.KEY_WAS_TRIGGERED:
+                self.pybullet_camera_eye = "r_eye"
+                print("PyBullet camera: right eye")
+
+            link_name = f"{self.pybullet_camera_eye}_pupil"
+            link_id = self.precomputed_link_ids[link_name]
+            position, orientation = self.getLinkState(
+                self.robot, link_id, computeForwardKinematics=True
+            )[4:6]
+            rotation = np.asarray(self.getMatrixFromQuaternion(orientation)).reshape(3, 3)
+            forward = rotation @ np.array([0.0, 0.0, 1.0])
+            forward /= np.linalg.norm(forward)
+
+            now = time.time()
+            if now - self._last_pybullet_camera_render >= 1.0 / 30.0:
+                eye_position = np.asarray(position)
+                view_matrix = self.computeViewMatrix(
+                    eye_position.tolist(),
+                    (eye_position + forward).tolist(),
+                    [0.0, 0.0, 1.0],
+                )
+                projection_matrix = self.computeProjectionMatrixFOV(
+                    fov=60.0,
+                    aspect=320.0 / 240.0,
+                    nearVal=0.01,
+                    farVal=100.0,
+                )
+                self.getCameraImage(
+                    320,
+                    240,
+                    viewMatrix=view_matrix,
+                    projectionMatrix=projection_matrix,
+                    renderer=p.ER_BULLET_HARDWARE_OPENGL,
+                )
+                self._last_pybullet_camera_render = now
+        except (KeyError, p.error):
+            pass
 
     def toggle_gravity(self) -> None:
         """

@@ -1,0 +1,54 @@
+vhacd:
+  use_vhacd: true
+  force_vhacd: false
+  force_vhacd_urdf: true
+robot_urdf_path: "iCub/full.urdf"
+pybullet_gui: true
+pybullet_camera_eye: l_eye
+pybullet_start_view: true
+pybullet_camera_distance: 1.076
+pybullet_camera_yaw: 269.600
+pybullet_camera_pitch: -13.200
+pybullet_camera_target: [-0.10643303394317627, -0.0032275905832648277, -0.2127707302570343]
+gui:
+  standard: false
+  web: false
+tolerance:
+  joint: 1e-3
+end_effector: "r_hand"
+initial_joint_angles:
+  r_shoulder_pitch: -34
+  r_shoulder_roll: 30
+  r_shoulder_yaw: 0
+  r_elbow: 50
+  r_wrist_prosup: 0
+  r_wrist_pitch: 0
+  r_wrist_yaw: 0
+  l_shoulder_pitch: -34
+  l_shoulder_roll: 30
+  l_shoulder_yaw: 0
+  l_elbow: 50
+  l_wrist_prosup: 0
+  l_wrist_pitch: 0
+  l_wrist_yaw: 0
+urdfs:
+  paths: [plane/plane.obj]
+  positions: [[-5, -5, -0.65]]
+  fixed: [true]
+  color: [[0.75, 0.75, 0.75]]
+skin:
+  use: false
+  radius: 0.01
+  num_cores: 0
+  skin_parts: []
+collision_tolerance: 0.001
+debug: true
+log:
+  log: false
+  period: 0.01
+simulation_step: 240
+self_collisions: true
+eyes:
+  l_eye: false
+  r_eye: false
+log_pose: false

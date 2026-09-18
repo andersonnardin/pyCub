@@ -83,7 +83,12 @@ class URDF:
             if len(attr_val) > 1:
                 if len(attr_val) > 3:
                     attr_val = [_ for _ in attr_val if _ != ""]
-                attr_val = list(map(float, attr_val))
+                try:
+                    attr_val = list(map(float, attr_val))
+                except ValueError:
+                    # Mesh filenames can contain spaces on Windows.  They are
+                    # text attributes, not numeric vectors.
+                    attr_val = " ".join(attr_val)
             else:
                 try:
                     attr_val = float(attr_val[0])

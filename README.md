@@ -1,4 +1,11 @@
 # pyCub Documentation
+
+> **Modified fork of [rustlluk/pyCub](https://github.com/rustlluk/pyCub).**
+> Original project by Lukas Rustler and contributors, licensed under
+> [CC BY 4.0](LICENSE). This fork adds compatibility fixes and optional
+> PyBullet GUI configurations and examples. It is not affiliated with or
+> endorsed by the original authors.
+
 pyCub is iCub humanoid robot simulator written in Python. It uses PyBullet for simulation and Open3D for visualization.
 
 [![iCub Robot](docs/documentation/images/icub.png)](https://rustlluk.github.io/pycub)
