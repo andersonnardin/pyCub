@@ -240,11 +240,14 @@ class pyCub(BulletClient):
             self.visualizer = Visualizer(self)
             self.last_render = time.time()
 
-        # Robotics Toolbox 1.0 exposes the URDF reader on ``ERobot`` rather
-        # than on the base ``Robot`` class.
-        rtb_links, rtb_name, _, rtb_urdf_file_path = rtb.robot.ERobot.URDF_read(
-            self.urdf_path
-        )
+        # Robotics Toolbox 1.4 moved URDF_read to URDFRobot. Older versions
+        # expose it on ERobot, so retain that fallback for compatibility.
+        try:
+            from roboticstoolbox.models.URDF.URDFRobot import URDF_read
+        except ImportError:
+            URDF_read = rtb.robot.ERobot.URDF_read
+
+        rtb_links, rtb_name, _, rtb_urdf_file_path = URDF_read(self.urdf_path)
         self.rtb_robot = rtb.robot.ERobot(
             rtb_links,
             name=rtb_name.upper(),
