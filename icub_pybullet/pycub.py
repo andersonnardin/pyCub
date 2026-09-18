@@ -247,7 +247,11 @@ class pyCub(BulletClient):
         except ImportError:
             URDF_read = rtb.robot.ERobot.URDF_read
 
-        rtb_links, rtb_name, _, rtb_urdf_file_path = URDF_read(self.urdf_path)
+        # Older releases return (links, name, urdf_string, urdf_path), while
+        # newer releases return only the first three values.
+        urdf_data = URDF_read(self.urdf_path)
+        rtb_links, rtb_name, _ = urdf_data[:3]
+        rtb_urdf_file_path = urdf_data[3] if len(urdf_data) > 3 else self.urdf_path
         self.rtb_robot = rtb.robot.ERobot(
             rtb_links,
             name=rtb_name.upper(),
