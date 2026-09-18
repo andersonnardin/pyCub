@@ -1,9 +1,24 @@
-"""Test pyCub skin sensors using the optional PyBullet GUI."""
+"""
+Script to the test the skin sensors. Balls falling to the skin and turning activated point to green should be seen.
+"""
 
-from icub_pybullet.pycub import pyCub
+import os
+import sys
+try:
+    from icub_pybullet.pycub import pyCub
+except:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    from icub_pybullet.pycub import pyCub
+from typing import NoReturn
 
 
-def main() -> None:
+def main() -> NoReturn:
+    """
+    Main function to run the example
+
+    :return:
+    :rtype:
+    """
     client = pyCub(config="skin_test_pybullet_gui.yaml")
 
     while client.is_alive():
