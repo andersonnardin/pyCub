@@ -8,6 +8,26 @@
 
 pyCub is iCub humanoid robot simulator written in Python. It uses PyBullet for simulation and Open3D for visualization.
 
+## Changes in this fork
+
+Compared with the upstream project, this fork makes the following changes:
+
+- Adds an optional `pybullet_gui` configuration mode. Upstream uses the
+  Open3D-based visualizer when GUI output is enabled; this fork can instead
+  use PyBullet's built-in GUI when an Open3D rendering window is unavailable.
+- Adds separate PyBullet-GUI configurations and examples for the joint-space,
+  Cartesian-space, and skin-sensor demonstrations. The original upstream
+  Open3D configurations and examples are retained unchanged.
+- Adds PyBullet GUI eye-camera previews, skin-sensor overlays, and configurable
+  initial observer-camera settings.
+- Updates the Robotics Toolbox URDF-loading code so it supports both older
+  releases and the newer Robotics Toolbox API.
+- Allows URDF mesh filenames containing spaces, which is needed for paths such
+  as Windows project folders with spaces in their names.
+
+The optional PyBullet GUI is an alternative interface for specific environments;
+it does not replace or claim to improve the original Open3D visualization.
+
 [![iCub Robot](docs/documentation/images/icub.png)](https://rustlluk.github.io/pycub)
 
 ## Installation  
