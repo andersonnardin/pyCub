@@ -18,8 +18,11 @@ Compared with the upstream project, this fork makes the following changes:
 - Adds separate PyBullet-GUI configurations and examples for the joint-space,
   Cartesian-space, and skin-sensor demonstrations. The original upstream
   Open3D configurations and examples are retained unchanged.
-- Adds PyBullet GUI eye-camera previews, skin-sensor overlays, and configurable
-  initial observer-camera settings.
+- Adds an embedded PyBullet eye-camera preview. Press `L` to view the left-eye
+  camera and `R` to view the right-eye camera while the simulation runs.
+  Upstream pyCub provides eye-image access through its API; this fork adds the
+  interactive PyBullet-GUI preview and switching controls, along with
+  skin-sensor overlays and configurable initial observer-camera settings.
 - Updates the Robotics Toolbox URDF-loading code so it supports both older
   releases and the newer Robotics Toolbox API.
 - Allows URDF mesh filenames containing spaces, which is needed for paths such
